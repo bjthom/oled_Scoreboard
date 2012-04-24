@@ -17,6 +17,12 @@ void onbase_set(char r);
 void rhe_set(char* arhe, char* hrhe);
 void inn_set(char* inn);
 
+char teams[30] = {"Angels","Dbacks"   ,"Braves"  ,"Orioles","Red Sox"  ,"White Sox", \
+                  "Cubs"  ,"Reds"     ,"Indians" ,"Rockies","Tigers"   ,"Marlins", \
+                  "Astros","Royals"   ,"Dodgers" ,"Brewers","Twins"    ,"Yankees", \
+                  "Mets"  ,"Athletics","Phillies","Pirates","Padres"   ,"Mariners", \
+                  "Giants","Cardinals","Rays"    ,"Rangers","Blue Jays","Nationals"};
+
 char num[] = "01234567";
 char *numptr = num;
 char *num4ptr = num;
@@ -33,7 +39,9 @@ void draw(void) {
   //u8g.drawStr( 81, 23, " 1  2  3");
   //u8g.drawStr( 81, 42, "10 11 12");
 
-  team_set("Athletics","Angels");
+  //team_set("Athletics","Angels");
+  team_set(teams[0],teams[22]);
+
   matchup_set("Saltalamacchia","Santana");
   rhe_set(" 1 10  4","10  4  0");
   balls_set(*num4ptr);
