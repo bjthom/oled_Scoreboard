@@ -3,6 +3,12 @@ import time
 import xml.etree.ElementTree as ET
 import serial
 
+team_list = ['ana','ari','atl','bal','bos','cha',
+             'chn','cin','cle','col','det','flo', 
+             'hou','kca','lan','mil','min','nya', 
+             'nyn','oak','phi','pit','sdn','sea', 
+             'sfn','sln','tba','tex','tor','was']
+
 def scoreboard(gid):
     temp_id = gid.split('_')
     year = 'year_' + temp_id[1] + '/'
@@ -21,11 +27,11 @@ def scoreboard(gid):
     away_team = temp_id[4][:3]
     home_team = temp_id[5][:3]
 
-    teams = {'ana':'0', 'ari':'1', 'atl':'2', 'bal':'3', 'bos':'4', 'cha':'5', \
-             'chn':'6', 'cin':'7', 'cle':'8', 'col':'9', 'det':'a', 'flo':'b', \
-             'hou':'c', 'kca':'d', 'lan':'e', 'mil':'f', 'min':'g', 'nya':'h', \
-             'nyn':'i', 'oak':'j', 'phi':'k', 'pit':'l', 'sdn':'m', 'sea':'n', \
-             'sfn':'o', 'sln':'p', 'tba':'q', 'tex':'r', 'tor':'s', 'was':'t'}
+    teams = {'ana':' 0', 'ari':' 1', 'atl':' 2', 'bal':' 3', 'bos':' 4', 'cha':' 5', \
+             'chn':' 6', 'cin':' 7', 'cle':' 8', 'col':' 9', 'det':'10', 'flo':'11', \
+             'hou':'12', 'kca':'13', 'lan':'14', 'mil':'15', 'min':'16', 'nya':'17', \
+             'nyn':'18', 'oak':'19', 'phi':'20', 'pit':'21', 'sdn':'22', 'sea':'23', \
+             'sfn':'24', 'sln':'25', 'tba':'26', 'tex':'27', 'tor':'28', 'was':'29'}
 
     at = teams[away_team]
     ht = teams[home_team]
@@ -38,7 +44,7 @@ def scoreboard(gid):
         try:
             data = urllib2.urlopen(url)
             tree = ET.parse(data)
-
+            
             game = tree.getroot()
             game_kids = game.getchildren()
             score = game_kids[0].attrib
@@ -55,20 +61,20 @@ def scoreboard(gid):
             he = score['he']
 
             if len(hh) == 1:
-                hh = '0' + hh
+                hh = ' ' + hh
             if len(ar) == 1:
-                ar = '0' + ar
+                ar = ' ' + ar
             if len(hr) == 1:
-                hr = '0' + hr
+                hr = ' ' + hr
             if len(ah) == 1:
-                ah = '0' + ah
+                ah = ' ' + ah
             
             inning = game.attrib['inning']
             topbot = game.attrib['inning_state']
             status = game.attrib['status_ind']
 
             if len(inning) == 1:
-                inning = '0' + inning
+                inning = ' ' + inning
 
             if status == 'I':
                 if topbot == 'Top':
