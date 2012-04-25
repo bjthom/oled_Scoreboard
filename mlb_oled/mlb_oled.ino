@@ -1,8 +1,10 @@
 /* -*- mode: c -*- */
 
+// U8G Library include and setup
 #include "U8glib.h"
 U8GLIB_NHD27OLED_BW u8g(13, 11, 10, 9);       // SPI Com: SCK = 13, MOSI = 11, CS = 10, A0 = 9
 
+// Function declarations
 void structure(void);
 void balls_rst(void);
 void strs_rst(void);
@@ -17,46 +19,52 @@ void onbase_set(char r);
 void rhe_set(char* arhe, char* hrhe);
 void inn_set(char* inn);
 
-char teams[30] = {"Angels","Dbacks"   ,"Braves"  ,"Orioles","Red Sox"  ,"White Sox", \
-                  "Cubs"  ,"Reds"     ,"Indians" ,"Rockies","Tigers"   ,"Marlins", \
-                  "Astros","Royals"   ,"Dodgers" ,"Brewers","Twins"    ,"Yankees", \
-                  "Mets"  ,"Athletics","Phillies","Pirates","Padres"   ,"Mariners", \
-                  "Giants","Cardinals","Rays"    ,"Rangers","Blue Jays","Nationals"};
+// Global variables and arrays
+char *teams[30] = {"Angels","Dbacks"   ,"Braves"  ,"Orioles","Red Sox"  ,"White Sox", \
+                   "Cubs"  ,"Reds"     ,"Indians" ,"Rockies","Tigers"   ,"Marlins",   \
+                   "Astros","Royals"   ,"Dodgers" ,"Brewers","Twins"    ,"Yankees",   \
+                   "Mets"  ,"Athletics","Phillies","Pirates","Padres"   ,"Mariners",  \
+                   "Giants","Cardinals","Rays"    ,"Rangers","Blue Jays","Nationals"  };
 
-char num[] = "01234567";
-char *numptr = num;
-char *num4ptr = num;
-char *num3ptr = num;
+char data[] = "";
+
+/* Data format: 
+ *  inning(2),ateam(2),hteam(2),arhe(8),hrhe(8),count(3),onbase(1)
+ *  "xx/xx/xxxxxxxx/xxxxxxxx/xxx/xx"
+ *  Ex: " 0","26"," 3 10  0"," 3  8  0","221","t7"
+ */
+
+char test_data[] = "f0 214 4  8  1 3 10  0202011202";
 
 void draw(void) {
-  // graphic commands to redraw the complete screen
+  // Function to redraw the entire screen
+
+  // Set font
   u8g.setFont(u8g_font_fixed_v0);
-  
+
+  // Draw static elements of scoreboard
   structure();
 
-  inn_set("p0");
-  //u8g.drawStr( 0, 10, "Top 10");
-  //u8g.drawStr( 81, 23, " 1  2  3");
-  //u8g.drawStr( 81, 42, "10 11 12");
+  // Draw dynamic game info
+  inn_set(&test_data[0]);
+  
+  team_set(&test_data[2],&test_data[4]);
+  
+  rhe_set(&test_data[6],&test_data[14]);
 
-  //team_set("Athletics","Angels");
-  team_set(teams[0],teams[22]);
-
+  balls_set(test_data[27]);
+  strs_set(test_data[28]);
+  outs_set(test_data[29]);
+  onbase_set(test_data[30]);
+  
   matchup_set("Saltalamacchia","Santana");
-  rhe_set(" 1 10  4","10  4  0");
-  balls_set(*num4ptr);
-  strs_set(*num3ptr);
-  outs_set(*num3ptr);
-  onbase_set(*numptr);
-  
-//  u8g.drawFillCirc( 99, 51, 3, U8G_CIRC_ALL);
-//  u8g.drawEmpCirc( 111, 51, 3, U8G_CIRC_ALL);
-  
+
 }
 
 void setup(void) {
   // flip screen, if required
   // u8g.setRot180();
+  Serial.begin(9600);
 }
 
 /* Draw static structure elements of scoreboard */
@@ -69,7 +77,7 @@ void structure(void) {
   u8g.drawStr(93,64,"O:  ");    // Outs
 
   /* Draw blank circles and boxes for:
-     balls, strikes, outs, and runners */
+   balls, strikes, outs, and runners */
   onbase_rst();
   balls_rst();
   strs_rst();
@@ -152,8 +160,27 @@ void matchup_set(char* ateam, char* hteam) {
  * Input should be pointers to arrays of the names
  */
 void team_set(char* ateam, char* hteam) {
-  u8g.drawStr(0,23,ateam);
-  u8g.drawStr(0,42,hteam);
+  int a_index,h_index;
+  char at[3],ht[3];
+
+  if (ateam[0] == ' ') {
+    a_index = ateam[1]-'0';
+  } 
+  else {
+    at = { ateam[0], ateam[1] };
+    a_index = atoi(at);
+  }
+    
+  if (hteam[0] == ' ') {
+    h_index = hteam[1] - '0';
+  }
+  else {
+    ht = { hteam[0], hteam[1] };
+    h_index = atoi(ht);
+  }
+
+  u8g.drawStr(0,23,teams[a_index]);
+  u8g.drawStr(0,42,teams[h_index]);
 }
 
 /* Clear the base squares */
@@ -186,14 +213,21 @@ void onbase_set(char r) {
 }
 
 /* Draw the RHE lines for home and away teams
- * Takes two array pointers. Arrays should
+ * Takes two array pointers. These arrays should
  * always be 8 characters long. If R, H, or E
  * are single digits, replace the tens digit 
  * with a space. 
  */
 void rhe_set(char* arhe, char* hrhe) {
-  u8g.drawStr(81,23,arhe);
-  u8g.drawStr(81,42,hrhe);
+  char a[9],h[9];
+  
+  for (int i = 0; i < 8; i++) {
+    a[i] = arhe[i];
+    h[i] = hrhe[i];
+  }
+  
+  u8g.drawStr(81,23,&a[0]);
+  u8g.drawStr(81,42,&h[0]);
 }
 
 void inn_set(char* inn_info) {
@@ -225,30 +259,16 @@ void inn_set(char* inn_info) {
 }
 
 void loop(void) {
-  
-  if (*numptr == '7') {
-    numptr = num;
-  }
-  else numptr++;
-  if (*num4ptr == '4') {
-    num4ptr = &num[0];
-  }
-  else num4ptr++;
-  if (*num3ptr == '3') {
-    num3ptr = &num[0];
-  }
-  else num3ptr++;
+
   
   // picture loop
   u8g.firstPage();  
   do {
     draw();
   } while( u8g.nextPage() );
-  
-  /*numptr++;
-  num4ptr++;
-  num3ptr++;*/
-  
-  // rebuild the picture after some delay
+
+
+  // Redraw the picture after some delay
   delay(1000);
 }
+
