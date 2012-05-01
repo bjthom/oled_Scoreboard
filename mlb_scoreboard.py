@@ -27,6 +27,7 @@ def scoreboard(gid):
     away_team = temp_id[4][:3]
     home_team = temp_id[5][:3]
 
+    # Each team should be associated with a 2 character code
     teams = {'ana':' 0', 'ari':' 1', 'atl':' 2', 'bal':' 3', 'bos':' 4', 'cha':' 5', \
              'chn':' 6', 'cin':' 7', 'cle':' 8', 'col':' 9', 'det':'10', 'flo':'11', \
              'hou':'12', 'kca':'13', 'lan':'14', 'mil':'15', 'min':'16', 'nya':'17', \
