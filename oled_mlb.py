@@ -93,17 +93,17 @@ while 1:
         else:
             inn = '0'
 
-        # Get baserunner info
+        # Get baserunner info from:
+        #   game->field->offense->man['bnum']
+        # Get the base number occupied,
+        #   convert to int, and then OR to get onbase code
         offense = game_kids[4].getchildren()[0]
+        runners = offense.getchildren()
 
-        if (len(offense)-1) == 3:
-            onbase = 3
-        elif (len(offense)-1) == 2:
-            onbase = 2
-        elif (len(offense)-1) == 1:
-            onbase = 1
-        else:
-            onbase = 0
+        bases = [i.attrib['bnum'] for i in runners]
+        bases = [int(i) for i in bases]
+        
+        onbase = any(bases)
             
         # Get at bat info
         at_bat = game_kids[3].getchildren()
