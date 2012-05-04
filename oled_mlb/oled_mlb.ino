@@ -29,9 +29,9 @@ char *teams[30] = {"Angels","Dbacks"   ,"Braves"  ,"Orioles","Red Sox"  ,"White 
 char data[] = "";
 
 /* Data format: 
- *  inning(2),ateam(2),hteam(2),arhe(8),hrhe(8),count(3),onbase(1)
- *  "xx/xx/xxxxxxxx/xxxxxxxx/xxx/xx"
- *  Ex: " 0","26"," 3 10  0"," 3  8  0","221","t7"
+ *  inning(3),ateam(2),hteam(2),arhe(8),hrhe(8),count(3),onbase(1)
+ *  "xxx/xx/xx/xxxxxxxx/xxxxxxxx/xxx/xx"
+ *  Ex: "t 7"," 0","26"," 3 10  0"," 3  8  0","221","1"
  */
 
 char test_data[] = "f0 214 4  8  1 3 10  0202011202";
@@ -232,6 +232,7 @@ void rhe_set(char* arhe, char* hrhe) {
 
 void inn_set(char* inn_info) {
   char state = inn_info[0];
+  /* need to edit this to parse 2 character inning info */
 
   switch (state) {
   case 'w':
