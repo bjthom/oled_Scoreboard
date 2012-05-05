@@ -45,17 +45,20 @@ teams = team_dict[away_team] + team_dict[home_team]
 ##ser = serial.Serial(6, 9600)
 while 1:
     try:
+        # Open URL and parse XML tree
         data = urllib2.urlopen(url)
         tree = ET.parse(data)
             
         game = tree.getroot()
         game_kids = game.getchildren()
 
-        # Get count
+        # Get count data from
+        #  game.attrib
         count = [game.attrib['b'],game.attrib['s'],game.attrib['o']]
         count = ''.join(count)
 
         # Get score and pad with spaces if necessary
+        #  game->score.attrib
         score = game_kids[0].attrib
 
         arhe = [score['ar'],score['ah'],score['he']]
@@ -67,29 +70,22 @@ while 1:
         rhe = ' '.join(arhe) + ' '.join(hrhe)
         
         # Get inning info
+        #  game.attrib
+        # pad inning number with space if < 10
+        # 
         inning = game.attrib['inning']
         inn_state = game.attrib['inning_state']
         status = game.attrib['status_ind']
 
         if len(inning) == 1:
             inning = ' ' + inning
-        print inning
 
         if status == 'I':
-            if inn_state == 'Top':
-                inn = 't'
-            if inn_state == 'Middle':
-                inn = 'm'
-            if inn_state == 'Bottom':
-                inn = 'b'
-            if inn_state == 'End':
-                inn = 'e'
-        elif status == 'P':
-            inn = 'p'
+            inn = inn_state[0].lower()
+        elif status == 'P' or 'F' or 'O':
+            inn = status.lower()
         elif status == 'PW':
             inn = 'w'
-        elif status == 'F' or 'O':
-            inn = 'f'
         else:
             inn = '0'
 
@@ -125,7 +121,7 @@ while 1:
         ser_data = gameinfo+last_play
         print 'Count: ' + count
         print 'RHE: ' + rhe
-        print 'Inn: ' + inning + inn
+        print 'Inn: ' + inn + inning
         print onbase
         print 'Last Play: ' + last_play
         print len(last_play)
