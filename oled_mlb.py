@@ -72,7 +72,9 @@ while 1:
         # Get inning info
         #  game.attrib
         # pad inning number with space if < 10
-        # 
+        # inning state is the first letter of
+        #  the inning status, unless game
+        #  is over or not yet started
         inning = game.attrib['inning']
         inn_state = game.attrib['inning_state']
         status = game.attrib['status_ind']
@@ -91,18 +93,25 @@ while 1:
 
         # Get baserunner info from:
         #   game->field->offense->man['bnum']
-        # Get the base number occupied,
-        #   convert to int, and then OR to get onbase code
+        # Get the base number(s) occupied,
+        #   convert to int, and then reduce and OR to get onbase code
         offense = game_kids[4].getchildren()[0]
         runners = offense.getchildren()
 
         bases = [i.attrib['bnum'] for i in runners]
-        bases = [int(i) for i in bases]
+        bases = [int(i) for i in bases if i != '4']
         
-        onbase = any(bases)
+        if len(bases) > 0:
+            onbase = reduce(lambda x,y: x|y, bases)
+        else:
+            onbase = 0;
             
-        # Get at bat info
+        # Get at bat and lasy play info
         at_bat = game_kids[3].getchildren()
+        players = game_kids[1].getchildren()
+
+        batter = players[0].attrib['boxname']
+        pitcher = players[1].attrib['boxname']
 
         if len(at_bat) == 0:
             last_play = 'None'
@@ -110,26 +119,34 @@ while 1:
             last_play = at_bat[-1].attrib['des']
 
         if len(last_play) < 20:
-            addon = 20 - len(last_play)
-            spaces = "                    "
-            last_play = last_play + spaces[0:addon]
+            last_play = last_play.ljust(20)
         if len(last_play) > 20:
             last_play = last_play[:20]
             
         # Set up serial data
         gameinfo = inn+inning+teams+rhe+count
-        ser_data = gameinfo+last_play
-        print 'Count: ' + count
-        print 'RHE: ' + rhe
-        print 'Inn: ' + inn + inning
-        print onbase
-        print 'Last Play: ' + last_play
-        print len(last_play)
+        ser_data = gameinfo
+        print 'Inn:       ' + inn + inning
+        print 'Teams:     ' + away_team + ' vs. ' + home_team
+        print 'RHE:       ' + rhe
+        print 'Count:     ' + count
+        print 'Runners:   ' + str(onbase) + ' '+ str(bases)
+        print 'Batter:    ' + batter + ' (' + str(len(batter)) + ')'
+        print 'Pitcher:   ' + pitcher + ' (' + str(len(pitcher)) + ')'
+        print 'Last Play: ' + last_play + ' (' + str(len(last_play)) + ')'
         print ser_data
         print '==='
 
-        # Write data to serial port
-        ##ser.write(ser_data)
+        # Write keyed data to serial port
+        #  ! - game info
+        #  @ - batter name
+        #  # - pitcher name
+        #ser.write('!')
+        #ser.write(ser_data)
+        #ser.write('@')
+        #ser.write(batter)
+        #ser.write('#')
+        #ser.write(pitcher)
                 
         # Wait before repolling website 
         # 12 sec. "max" between pitch time

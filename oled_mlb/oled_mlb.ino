@@ -242,25 +242,27 @@ void inn_set(char* inn_info) {
     u8g.drawStr(0,10,"Pre-Game");
     break;
   case 't':
-    u8g.drawStr(0,10,"Top of");
+    u8g.drawStr(0,10,"Top of ");
     u8g.drawStr(42,10,&inn_info[1]);
     break;
   case 'm':
-    u8g.drawStr(0,10,"Mid of 1");
+    u8g.drawStr(0,10,"Mid of ");
     u8g.drawStr(42,10,&inn_info[1]);
     break;
   case 'b':
     u8g.drawStr(0,10,"Bot of ");
     u8g.drawStr(42,10,&inn_info[1]);
     break;
-  case 'f':
+  case 'f'|'o':
     u8g.drawStr(0,10,"Final");
     break;
   }
 }
 
 void loop(void) {
+  if (Serial.available() > 0) {
 
+  }
   
   // picture loop
   u8g.firstPage();  
