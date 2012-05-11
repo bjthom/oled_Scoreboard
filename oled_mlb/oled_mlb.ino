@@ -31,10 +31,12 @@ char data[] = "";
 /* Data format: 
  *  inning(3),ateam(2),hteam(2),arhe(8),hrhe(8),count(3),onbase(1)
  *  "xxx/xx/xx/xxxxxxxx/xxxxxxxx/xxx/xx"
- *  Ex: "t 7"," 0","26"," 3 10  0"," 3  8  0","221","1"
+ *  Ex: "t7 "," 0","26"," 3 10  0"," 3  8  0","221","1"
  */
 
-char test_data[] = "f0 214 4  8  1 3 10  0202011202";
+//char test_data[] = "f0  214 4  8  1 3 10  0202011202";
+//char test_data[] = "f0  214 4  8  1 3 10  01202";
+char test_data[] = "b8  8 4 7 11  0 3 10  02213";
 
 void draw(void) {
   // Function to redraw the entire screen
@@ -48,14 +50,14 @@ void draw(void) {
   // Draw dynamic game info
   inn_set(&test_data[0]);
   
-  team_set(&test_data[2],&test_data[4]);
+  team_set(&test_data[3],&test_data[5]);
   
-  rhe_set(&test_data[6],&test_data[14]);
+  rhe_set(&test_data[7],&test_data[15]);
 
-  balls_set(test_data[27]);
-  strs_set(test_data[28]);
-  outs_set(test_data[29]);
-  onbase_set(test_data[30]);
+  balls_set(test_data[23]);
+  strs_set(test_data[24]);
+  outs_set(test_data[25]);
+  onbase_set(test_data[26]);
   
   matchup_set("Saltalamacchia","Santana");
 
@@ -232,8 +234,9 @@ void rhe_set(char* arhe, char* hrhe) {
 
 void inn_set(char* inn_info) {
   char state = inn_info[0];
-  /* need to edit this to parse 2 character inning info */
-
+  char inn_num[3] = {inn_info[1],inn_info[2]};
+  Serial.println(state);
+  
   switch (state) {
   case 'w':
     u8g.drawStr(0,10,"Warmup");
@@ -243,15 +246,19 @@ void inn_set(char* inn_info) {
     break;
   case 't':
     u8g.drawStr(0,10,"Top of ");
-    u8g.drawStr(42,10,&inn_info[1]);
+    u8g.drawStr(42,10,&inn_num[0]);
     break;
   case 'm':
     u8g.drawStr(0,10,"Mid of ");
-    u8g.drawStr(42,10,&inn_info[1]);
+    u8g.drawStr(42,10,&inn_num[0]);
     break;
   case 'b':
     u8g.drawStr(0,10,"Bot of ");
-    u8g.drawStr(42,10,&inn_info[1]);
+    u8g.drawStr(42,10,&inn_num[0]);
+    break;
+  case 'e':
+    u8g.drawStr(0,10,"End of ");
+    u8g.drawStr(42,10,&inn_num[0]);
     break;
   case 'f'|'o':
     u8g.drawStr(0,10,"Final");

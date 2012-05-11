@@ -80,7 +80,7 @@ while 1:
         status = game.attrib['status_ind']
 
         if len(inning) == 1:
-            inning = ' ' + inning
+            inning = inning.ljust(2)
 
         if status == 'I':
             inn = inn_state[0].lower()
@@ -124,17 +124,17 @@ while 1:
             last_play = last_play[:20]
             
         # Set up serial data
-        gameinfo = inn+inning+teams+rhe+count
+        gameinfo = inn+inning+teams+rhe+count+str(onbase)
         ser_data = gameinfo
-        print 'Inn:       ' + inn + inning
-        print 'Teams:     ' + away_team + ' vs. ' + home_team
-        print 'RHE:       ' + rhe
-        print 'Count:     ' + count
+        print 'Inn:       ' + inn + inning + ' (' + str(len(inn)+len(inning)) + ')'
+        print 'Teams:     ' + away_team + ' vs. ' + home_team + teams  + ' (' + str(len(teams)) + ')'
+        print 'RHE:       ' + rhe + ' (' + str(len(rhe)) + ')'
+        print 'Count:     ' + count + ' (' + str(len(count)) + ')'
         print 'Runners:   ' + str(onbase) + ' '+ str(bases)
         print 'Batter:    ' + batter + ' (' + str(len(batter)) + ')'
         print 'Pitcher:   ' + pitcher + ' (' + str(len(pitcher)) + ')'
         print 'Last Play: ' + last_play + ' (' + str(len(last_play)) + ')'
-        print ser_data
+        print ser_data + ' (' + str(len(ser_data)) + ')'
         print '==='
 
         # Write keyed data to serial port
@@ -155,4 +155,3 @@ while 1:
         #ser.close()
         print 'Scoreboard Done.'
         break
-
