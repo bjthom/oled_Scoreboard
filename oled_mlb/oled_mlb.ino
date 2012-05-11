@@ -27,6 +27,7 @@ char *teams[30] = {"Angels","Dbacks"   ,"Braves"  ,"Orioles","Red Sox"  ,"White 
                    "Giants","Cardinals","Rays"    ,"Rangers","Blue Jays","Nationals"  };
 
 char data[] = "";
+char ser_data[28];
 
 /* Data format: 
  *  inning(3),ateam(2),hteam(2),arhe(8),hrhe(8),count(3),onbase(1)
@@ -165,21 +166,11 @@ void team_set(char* ateam, char* hteam) {
   int a_index,h_index;
   char at[3],ht[3];
 
-  if (ateam[0] == ' ') {
-    a_index = ateam[1]-'0';
-  } 
-  else {
-    at = { ateam[0], ateam[1] };
-    a_index = atoi(at);
-  }
-    
-  if (hteam[0] == ' ') {
-    h_index = hteam[1] - '0';
-  }
-  else {
-    ht = { hteam[0], hteam[1] };
-    h_index = atoi(ht);
-  }
+  at = {ateam[0],ateam[1]};
+  a_index = atoi(at);
+  
+  ht = {hteam[0],hteam[1]};
+  h_index = atoi(ht);
 
   u8g.drawStr(0,23,teams[a_index]);
   u8g.drawStr(0,42,teams[h_index]);
@@ -235,7 +226,6 @@ void rhe_set(char* arhe, char* hrhe) {
 void inn_set(char* inn_info) {
   char state = inn_info[0];
   char inn_num[3] = {inn_info[1],inn_info[2]};
-  Serial.println(state);
   
   switch (state) {
   case 'w':
@@ -267,9 +257,16 @@ void inn_set(char* inn_info) {
 }
 
 void loop(void) {
-  if (Serial.available() > 0) {
-
+  //if (Serial.available() > 0) {
+  while (Serial.available()) {
+    for (int i = 0; i < 27; i++) {
+      ser_data[i] = Serial.read();
+    }
+  //ser_data[27] = '\0';
+  Serial.println(ser_data);
   }
+  
+  //Serial.println(ser_data);
   
   // picture loop
   u8g.firstPage();  
