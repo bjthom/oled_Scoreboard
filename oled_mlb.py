@@ -24,11 +24,17 @@ url = url_setup + '/plays.xml'
 url_game = url_setup + '/game.xml'
 url_event = url_setup + '/game_events.xml'
 
-# Get game time if not yet started
-game_info = urllib2.urlopen(url_game)
-game_tree = ET.parse(game_info)
-info = game_tree.getroot()
-game_time = info.attrib['game_time_et']
+# Get game time if not yet started,
+#  exit nicely and say why if something goes wrong
+# << Not yet implemented >>
+try:
+    game_info = urllib2.urlopen(url_game)
+    game_tree = ET.parse(game_info)
+    info = game_tree.getroot()
+    game_time = info.attrib['game_time_et']
+except urllib2.HTTPError, e:
+    print 'code: ', e.code
+    sys.exit()
     
 # Each team should be associated with a 2 character digit, substitute space if i<10
 team_dict = {'ana':' 0', 'ari':' 1', 'atl':' 2', 'bal':' 3', 'bos':' 4', 'cha':' 5', \
@@ -42,7 +48,9 @@ away_team = split_id[4][:3]
 home_team = split_id[5][:3]
 teams = team_dict[away_team] + team_dict[home_team]
     
-##ser = serial.Serial(6, 9600)
+# Open serial connection to board
+ser = serial.Serial(port, 9600)
+
 while 1:
     try:
         # Open URL and parse XML tree
@@ -106,12 +114,20 @@ while 1:
         else:
             onbase = 0;
             
-        # Get at bat and lasy play info
-        at_bat = game_kids[3].getchildren()
+        # Get at bat info
+        # - Names should be no longer than 14 characters
+        #   Longest name: len(Saltalamacchia) == 14
+        
         players = game_kids[1].getchildren()
 
         batter = players[0].attrib['boxname']
         pitcher = players[1].attrib['boxname']
+
+        batter = batter.ljust(14)
+        pitcher = pitcher.ljust(14)
+
+        # Get at bat event info
+        at_bat = game_kids[3].getchildren()
 
         if len(at_bat) == 0:
             last_play = 'None'
@@ -125,7 +141,8 @@ while 1:
             
         # Set up serial data
         gameinfo = inn+inning+teams+rhe+count+str(onbase)
-        ser_data = gameinfo
+        ser_data = gameinfo #+batter+pitcher
+
         print 'Inn:       ' + inn + inning + ' (' + str(len(inn)+len(inning)) + ')'
         print 'Teams:     ' + away_team + ' vs. ' + home_team + teams  + ' (' + str(len(teams)) + ')'
         print 'RHE:       ' + rhe + ' (' + str(len(rhe)) + ')'
@@ -137,21 +154,17 @@ while 1:
         print ser_data + ' (' + str(len(ser_data)) + ')'
         print '==='
 
-        # Write keyed data to serial port
-        #  ! - game info
-        #  @ - batter name
-        #  # - pitcher name
-        #ser.write('!')
-        #ser.write(ser_data)
-        #ser.write('@')
-        #ser.write(batter)
-        #ser.write('#')
-        #ser.write(pitcher)
+        # Write data to serial port
+        ser.write(ser_data)
+        ser.write(batter)
+        ser.write(pitcher)
                 
         # Wait before repolling website 
         # 12 sec. "max" between pitch time
         time.sleep(15)
+    
     except KeyboardInterrupt:
-        #ser.close()
-        print 'Scoreboard Done.'
+        # Stop script cleanly after keyboard interrupt
+        ser.close()
+        print '\nScoreboard Done.'
         break

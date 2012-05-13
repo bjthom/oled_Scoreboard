@@ -26,8 +26,11 @@ char *teams[30] = {"Angels","Dbacks"   ,"Braves"  ,"Orioles","Red Sox"  ,"White 
                    "Mets"  ,"Athletics","Phillies","Pirates","Padres"   ,"Mariners",  \
                    "Giants","Cardinals","Rays"    ,"Rangers","Blue Jays","Nationals"  };
 
-char data[] = "";
-char ser_data[28];
+char data[] = {0};
+char game_data[28] = {0};
+char b_name[15] = {0};
+char p_name[15] = {0};
+
 
 /* Data format: 
  *  inning(3),ateam(2),hteam(2),arhe(8),hrhe(8),count(3),onbase(1)
@@ -49,19 +52,19 @@ void draw(void) {
   structure();
 
   // Draw dynamic game info
-  inn_set(&test_data[0]);
+  inn_set(&game_data[0]);
   
-  team_set(&test_data[3],&test_data[5]);
+  team_set(&game_data[3],&game_data[5]);
   
-  rhe_set(&test_data[7],&test_data[15]);
+  rhe_set(&game_data[7],&game_data[15]);
 
-  balls_set(test_data[23]);
-  strs_set(test_data[24]);
-  outs_set(test_data[25]);
-  onbase_set(test_data[26]);
+  balls_set(game_data[23]);
+  strs_set(game_data[24]);
+  outs_set(game_data[25]);
+  onbase_set(game_data[26]);
   
-  matchup_set("Saltalamacchia","Santana");
-
+  matchup_set(game_data[0],b_name,p_name);
+  
 }
 
 void setup(void) {
@@ -150,12 +153,22 @@ void outs_set(char o) {
 /* Draw the pitcher and batter names
  * Input should be pointers to arrays of the names
  */
-void matchup_set(char* ateam, char* hteam) {
+void matchup_set(char state, char* batter, char* pitcher) {
   u8g.setFont(u8g_font_5x8);
 
-  u8g.drawStr(6,32,ateam);
-  u8g.drawStr(6,51,hteam);
-
+  if ((state == 't') | (state == 'm')) {
+      u8g.drawStr(6,32,batter);  //top    (away)
+      u8g.drawStr(6,51,pitcher); //bottom (home)
+  }
+  else if ((state == 'b') | (state == 'e')) {
+      u8g.drawStr(6,32,pitcher); //top    (home)
+      u8g.drawStr(6,51,batter);  //bottom (away)
+  } 
+  else {
+      u8g.drawStr(6,32," ");
+      u8g.drawStr(6,51," ");
+  }
+  
   u8g.setFont(u8g_font_fixed_v0);
 }
 
@@ -250,23 +263,36 @@ void inn_set(char* inn_info) {
     u8g.drawStr(0,10,"End of ");
     u8g.drawStr(42,10,&inn_num[0]);
     break;
-  case 'f'|'o':
+  case 'f':
+    u8g.drawStr(0,10,"Final");
+    break;
+  case 'o':
     u8g.drawStr(0,10,"Final");
     break;
   }
 }
 
 void loop(void) {
-  //if (Serial.available() > 0) {
+  
   while (Serial.available()) {
     for (int i = 0; i < 27; i++) {
-      ser_data[i] = Serial.read();
+      game_data[i] = Serial.read();
     }
-  //ser_data[27] = '\0';
-  Serial.println(ser_data);
+    for (int i = 0; i < 14; i++) {
+      b_name[i] = Serial.read();
+    }
+    for (int i = 0; i < 14; i++) {
+      p_name[i] = Serial.read();
+    }
+    
+    game_data[27] = '\0';
+    b_name[14] = '\0';
+    p_name[14] = '\0';
+
+    //Serial.println(game_data);
+    //Serial.println(b_name);
+    //Serial.println(p_name);
   }
-  
-  //Serial.println(ser_data);
   
   // picture loop
   u8g.firstPage();  
