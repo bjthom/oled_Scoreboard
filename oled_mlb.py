@@ -1,5 +1,6 @@
 import urllib2
 import time
+import datetime
 import xml.etree.ElementTree as ET
 import serial
 import sys
@@ -12,7 +13,7 @@ gid = sys.argv[2]
 
 # Build URLs from GID
 # - http://gd2.mlb.com/components/game/mlb/<data><gid>/plays.xml
-# - http://gd2.mlb.com/components/game/mlb/<data><gid>/game.xml
+# - http://gd2.mlb.com/components/game/mlb/<data><gid>/gamecenter.xml
 # - http://gd2.mlb.com/components/game/mlb/<data><gid>/game_events.xml
 
 split_id = gid.split('_')
@@ -20,18 +21,19 @@ year = 'year_' + split_id[1] + '/'
 month = 'month_' + split_id[2] + '/'
 day = 'day_' + split_id[3] + '/'
 url_setup = 'http://gd2.mlb.com/components/game/mlb/' + year + month + day + gid
-url = url_setup + '/plays.xml'
-url_game = url_setup + '/game.xml'
+url_plays = url_setup + '/plays.xml'
+url_gamecenter = url_setup + '/gamecenter.xml'
 url_event = url_setup + '/game_events.xml'
 
-# Get game time if not yet started,
-#  exit nicely and say why if something goes wrong
+# Check game time if not yet started,
+# Exit nicely and say why if something goes wrong
 # << Not yet implemented >>
 try:
-    game_info = urllib2.urlopen(url_game)
-    game_tree = ET.parse(game_info)
-    info = game_tree.getroot()
-    game_time = info.attrib['game_time_et']
+    game_info = urllib2.urlopen(url_gamecenter)
+    info_tree = ET.parse(game_info)
+    info = info_tree.getroot()
+    #game_time = info.attrib['game_time_et']
+
 except urllib2.HTTPError, e:
     print 'code: ', e.code
     sys.exit()
@@ -54,7 +56,7 @@ ser = serial.Serial(port, 9600)
 while 1:
     try:
         # Open URL and parse XML tree
-        data = urllib2.urlopen(url)
+        data = urllib2.urlopen(url_plays)
         tree = ET.parse(data)
             
         game = tree.getroot()
@@ -92,8 +94,10 @@ while 1:
 
         if status == 'I':
             inn = inn_state[0].lower()
-        elif status == 'P' or 'F' or 'O':
+        elif (status == 'P') or (status == 'F') or (status == 'O'):
             inn = status.lower()
+        elif status == 'PR':
+            inn = 'p' #change to rain?
         elif status == 'PW':
             inn = 'w'
         else:
@@ -144,7 +148,7 @@ while 1:
         ser_data = gameinfo #+batter+pitcher
 
         print 'Inn:       ' + inn + inning + ' (' + str(len(inn)+len(inning)) + ')'
-        print 'Teams:     ' + away_team + ' vs. ' + home_team + teams  + ' (' + str(len(teams)) + ')'
+        print 'Teams:     ' + away_team + ' vs. ' + home_team +  teams  + ' (' + str(len(teams)) + ')'
         print 'RHE:       ' + rhe + ' (' + str(len(rhe)) + ')'
         print 'Count:     ' + count + ' (' + str(len(count)) + ')'
         print 'Runners:   ' + str(onbase) + ' '+ str(bases)
