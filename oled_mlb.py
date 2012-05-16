@@ -11,6 +11,9 @@ import sys
 port = sys.argv[1]
 gid = sys.argv[2]
 
+html_excepts = 0
+parse_excepts = 0
+
 # Build URLs from GID
 # - http://gd2.mlb.com/components/game/mlb/<data><gid>/plays.xml
 # - http://gd2.mlb.com/components/game/mlb/<data><gid>/gamecenter.xml
@@ -155,18 +158,30 @@ while 1:
         print 'Batter:    ' + batter + ' (' + str(len(batter)) + ')'
         print 'Pitcher:   ' + pitcher + ' (' + str(len(pitcher)) + ')'
         print 'Last Play: ' + last_play + ' (' + str(len(last_play)) + ')'
-        print ser_data + ' (' + str(len(ser_data)) + ')'
+        print ser_data + batter + pitcher
+        print str(len(ser_data)+len(batter)+len(pitcher))
+        print '(' + str(html_excepts) + ',' + str(parse_excepts) + ')'
         print '==='
 
         # Write data to serial port
+        ser.write('#')
         ser.write(ser_data)
         ser.write(batter)
         ser.write(pitcher)
+        print ser.read(55)
                 
         # Wait before repolling website 
         # 12 sec. "max" between pitch time
         time.sleep(15)
     
+  #  except (urllib2.HTTPError, urllib2.URLError):
+ #       num_excepts += 1
+#        pass
+
+    except ET.ParseError:
+        parse_excepts +=1
+        pass
+
     except KeyboardInterrupt:
         # Stop script cleanly after keyboard interrupt
         ser.close()

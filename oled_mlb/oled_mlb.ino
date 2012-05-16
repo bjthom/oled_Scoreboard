@@ -275,23 +275,25 @@ void inn_set(char* inn_info) {
 void loop(void) {
   
   while (Serial.available()) {
-    for (int i = 0; i < 27; i++) {
-      game_data[i] = Serial.read();
-    }
-    for (int i = 0; i < 14; i++) {
-      b_name[i] = Serial.read();
-    }
-    for (int i = 0; i < 14; i++) {
-      p_name[i] = Serial.read();
-    }
+    if (Serial.read() == '#') {
+      for (int i = 0; i < 27; i++) {
+        game_data[i] = Serial.read();
+      }
+      for (int i = 0; i < 14; i++) {
+        b_name[i] = Serial.read();
+      }
+      for (int i = 0; i < 14; i++) {
+        p_name[i] = Serial.read();
+      }
     
-    game_data[27] = '\0';
-    b_name[14] = '\0';
-    p_name[14] = '\0';
+      game_data[27] = '\0';
+      b_name[14] = '\0';
+      p_name[14] = '\0';
 
-    //Serial.println(game_data);
-    //Serial.println(b_name);
-    //Serial.println(p_name);
+      Serial.print(game_data);
+      Serial.print(b_name);
+      Serial.print(p_name);
+    }
   }
   
   // picture loop
