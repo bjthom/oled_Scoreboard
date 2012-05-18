@@ -28,14 +28,19 @@ char *teams[30] = {"Angels","Dbacks"   ,"Braves"  ,"Orioles","Red Sox"  ,"White 
 
 char data[] = {0};
 char game_data[28] = {0};
+//char game_data[55] = {0};
 char b_name[15] = {0};
 char p_name[15] = {0};
+char game_tmp[28] = {0};
+char b_tmp[15] = {0};
+char p_tmp[15] = {0};
+char ser_data[57] = {0};
 
 
 /* Data format: 
- *  inning(3),ateam(2),hteam(2),arhe(8),hrhe(8),count(3),onbase(1)
+ *  #,inning(3),ateam(2),hteam(2),arhe(8),hrhe(8),count(3),onbase(1),names(28),*
  *  "xxx/xx/xx/xxxxxxxx/xxxxxxxx/xxx/xx"
- *  Ex: "t7 "," 0","26"," 3 10  0"," 3  8  0","221","1"
+ *  Ex: #m7 1422 7 12  1 0  3  11230Gordon        Brach         *
  */
 
 //char test_data[] = "f0  214 4  8  1 3 10  0202011202";
@@ -63,6 +68,7 @@ void draw(void) {
   outs_set(game_data[25]);
   onbase_set(game_data[26]);
   
+  //matchup_set(game_data[0],&game_data[27]); 
   matchup_set(game_data[0],b_name,p_name);
   
 }
@@ -153,8 +159,19 @@ void outs_set(char o) {
 /* Draw the pitcher and batter names
  * Input should be pointers to arrays of the names
  */
+//void matchup_set(char state, char* names) {
 void matchup_set(char state, char* batter, char* pitcher) {
   u8g.setFont(u8g_font_5x8);
+
+  /*char batter[15] = {0};
+  char pitcher[15] = {0};
+  
+  for (int i = 0; i < 14; i++) {
+    batter[i] = names[i];
+    pitcher[i] = names[i+14];
+  }
+  batter[14] = '\0';
+  pitcher[14] = '\0';*/
 
   if ((state == 't') | (state == 'm')) {
       u8g.drawStr(6,32,batter);  //top    (away)
@@ -273,27 +290,43 @@ void inn_set(char* inn_info) {
 }
 
 void loop(void) {
+  // Reset ser_data
+  ser_data[57] = {0};
   
+  // Read in all serial data from Python script
   while (Serial.available()) {
-    if (Serial.read() == '#') {
-      for (int i = 0; i < 27; i++) {
-        game_data[i] = Serial.read();
-      }
-      for (int i = 0; i < 14; i++) {
-        b_name[i] = Serial.read();
-      }
-      for (int i = 0; i < 14; i++) {
-        p_name[i] = Serial.read();
-      }
-    
-      game_data[27] = '\0';
-      b_name[14] = '\0';
-      p_name[14] = '\0';
-
-      Serial.print(game_data);
-      Serial.print(b_name);
-      Serial.print(p_name);
+    for (int i = 0; i < 57; i++) {
+      ser_data[i] = Serial.read();
     }
+  }
+  
+  /* Data should be keyed like so: #<data>*
+   *  Check that incoming data is valid and
+   *  separate as necessary.
+   * NOTE: this may potentially be redundant
+   *       and perhaps isn't necessary
+  */
+  if ((ser_data[0] == '#') && (ser_data[56] = '*')) {
+    for (int i = 1, j = 0; j < 28; i++, j++) {
+      game_data[j] = ser_data[i];
+    }
+    for (int i = 28, j = 0; j < 15; i++, j++) {
+      b_name[j] = ser_data[i];
+    }
+    for (int i = 42, j = 0; j < 15; i++, j++) {
+      p_name[j] = ser_data[i];
+    }
+    
+    /*for (int i = 0; i < 54; i++) {
+      game_data[i] = ser_data[i+1];
+    }*/
+    
+    // Terminate arrays with NULL
+    game_data[27] = '\0';
+    //game_data[54] = '\0';
+    b_name[14] = '\0';
+    p_name[14] = '\0';
+    
   }
   
   // picture loop

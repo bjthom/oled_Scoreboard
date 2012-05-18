@@ -43,7 +43,7 @@ except urllib2.HTTPError, e:
     
 # Each team should be associated with a 2 character digit, substitute space if i<10
 team_dict = {'ana':' 0', 'ari':' 1', 'atl':' 2', 'bal':' 3', 'bos':' 4', 'cha':' 5', \
-             'chn':' 6', 'cin':' 7', 'cle':' 8', 'col':' 9', 'det':'10', 'flo':'11', \
+             'chn':' 6', 'cin':' 7', 'cle':' 8', 'col':' 9', 'det':'10', 'mia':'11', \
              'hou':'12', 'kca':'13', 'lan':'14', 'mil':'15', 'min':'16', 'nya':'17', \
              'nyn':'18', 'oak':'19', 'phi':'20', 'pit':'21', 'sdn':'22', 'sea':'23', \
              'sfn':'24', 'sln':'25', 'tba':'26', 'tex':'27', 'tor':'28', 'was':'29'}
@@ -158,7 +158,7 @@ while 1:
         print 'Batter:    ' + batter + ' (' + str(len(batter)) + ')'
         print 'Pitcher:   ' + pitcher + ' (' + str(len(pitcher)) + ')'
         print 'Last Play: ' + last_play + ' (' + str(len(last_play)) + ')'
-        print ser_data + batter + pitcher
+        print '#' + ser_data + batter + pitcher + '*'
         print str(len(ser_data)+len(batter)+len(pitcher))
         print '(' + str(html_excepts) + ',' + str(parse_excepts) + ')'
         print '==='
@@ -168,13 +168,14 @@ while 1:
         ser.write(ser_data)
         ser.write(batter)
         ser.write(pitcher)
-        print ser.read(55)
+        ser.write('*')
+        #print ser.read(55)
                 
         # Wait before repolling website 
         # 12 sec. "max" between pitch time
         time.sleep(15)
     
-  #  except (urllib2.HTTPError, urllib2.URLError):
+  #  except (urllib2.HTTPError, urllib2.URLError, httplib.BadStatusLine):
  #       num_excepts += 1
 #        pass
 
