@@ -1,7 +1,9 @@
 /* -*- mode: c -*- */
 
-// U8G Library include and setup
+#include <avr/pgmspace.h>
 #include "U8glib.h"
+
+// U8G Library setup
 U8GLIB_NHD27OLED_BW u8g(13, 11, 10, 9);       // SPI Com: SCK = 13, MOSI = 11, CS = 10, A0 = 9
 
 // Function declarations
@@ -12,30 +14,69 @@ void outs_rst(void);
 void balls_set(char b);
 void strs_set(char s);
 void outs_set(char o);
-void matchup_set(char* ateam, char* hteam);
-void team_set(char* ateam, char* hteam);
+void matchup_set(char *ateam, char *hteam);
+void team_set(char *ateam, char *hteam);
 void onbase_rst(void);
 void onbase_set(char r);
-void rhe_set(char* arhe, char* hrhe);
-void inn_set(char* inn);
+void rhe_set(char *arhe, char *hrhe);
+void inn_set(char *inn);
+void checkASCII(char inp);
 
 // Global variables and arrays
-char *teams[30] = {"Angels","Dbacks"   ,"Braves"  ,"Orioles","Red Sox"  ,"White Sox", \
-                   "Cubs"  ,"Reds"     ,"Indians" ,"Rockies","Tigers"   ,"Marlins",   \
-                   "Astros","Royals"   ,"Dodgers" ,"Brewers","Twins"    ,"Yankees",   \
-                   "Mets"  ,"Athletics","Phillies","Pirates","Padres"   ,"Mariners",  \
-                   "Giants","Cardinals","Rays"    ,"Rangers","Blue Jays","Nationals"  };
+
+/* Kind of ridiculous, but the team names are all in program space.
+ *   Here we need to declare each team name string as an array
+ *   in the program space before finally declaring the entire teams
+ *   array.
+ */
+const prog_char t1[] PROGMEM = "Angels";
+const prog_char t2[] PROGMEM = "Dbacks";
+const prog_char t3[] PROGMEM = "Braves";
+const prog_char t4[] PROGMEM = "Orioles";
+const prog_char t5[] PROGMEM = "Red Sox";
+const prog_char t6[] PROGMEM = "White Sox";
+const prog_char t7[] PROGMEM = "Cubs";
+const prog_char t8[] PROGMEM = "Reds";
+const prog_char t9[] PROGMEM = "Indians";
+const prog_char t10[] PROGMEM = "Rockies";
+const prog_char t11[] PROGMEM = "Tigers";
+const prog_char t12[] PROGMEM = "Marlins";
+const prog_char t13[] PROGMEM = "Astros";
+const prog_char t14[] PROGMEM = "Royals";
+const prog_char t15[] PROGMEM = "Dodgers";
+const prog_char t16[] PROGMEM = "Brewers";
+const prog_char t17[] PROGMEM = "Twins";
+const prog_char t18[] PROGMEM = "Yankees";
+const prog_char t19[] PROGMEM = "Mets";
+const prog_char t20[] PROGMEM = "Athletics";
+const prog_char t21[] PROGMEM = "Phillies";
+const prog_char t22[] PROGMEM = "Pirates";
+const prog_char t23[] PROGMEM = "Padres";
+const prog_char t24[] PROGMEM = "Mariners";
+const prog_char t25[] PROGMEM = "Giants";
+const prog_char t26[] PROGMEM = "Cardinals";
+const prog_char t27[] PROGMEM = "Rays";
+const prog_char t28[] PROGMEM = "Rangers";
+const prog_char t29[] PROGMEM = "Blue Jays";
+const prog_char t30[] PROGMEM = "Nationals";
+
+const char *teams[] PROGMEM = {t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, 
+			       t11, t12, t13, t14, t15, t16, t17, t18, t19, t20,
+			       t21, t22, t23, t24, t25, t26, t27, t28, t29, t30};
+
+char a_team[10];
+char h_team[10];
 
 char data[] = {0};
 char game_data[28] = {0};
-//char game_data[55] = {0};
 char b_name[15] = {0};
 char p_name[15] = {0};
 char game_tmp[28] = {0};
 char b_tmp[15] = {0};
 char p_tmp[15] = {0};
 char ser_data[57] = {0};
-
+boolean valid = false;
+int a_index,h_index;
 
 /* Data format: 
  *  #,inning(3),ateam(2),hteam(2),arhe(8),hrhe(8),count(3),onbase(1),names(28),*
@@ -43,9 +84,7 @@ char ser_data[57] = {0};
  *  Ex: #m7 1422 7 12  1 0  3  11230Gordon        Brach         *
  */
 
-//char test_data[] = "f0  214 4  8  1 3 10  0202011202";
-//char test_data[] = "f0  214 4  8  1 3 10  01202";
-char test_data[] = "b8  8 4 7 11  0 3 10  02213";
+char test_data[] = "#f9 2514 0  6  1 6  9  20030Carpenter, M  Kershaw       *";
 
 void draw(void) {
   // Function to redraw the entire screen
@@ -58,24 +97,22 @@ void draw(void) {
 
   // Draw dynamic game info
   inn_set(&game_data[0]);
-  
+   
   team_set(&game_data[3],&game_data[5]);
   
   rhe_set(&game_data[7],&game_data[15]);
-
+  
   balls_set(game_data[23]);
   strs_set(game_data[24]);
   outs_set(game_data[25]);
   onbase_set(game_data[26]);
   
-  //matchup_set(game_data[0],&game_data[27]); 
   matchup_set(game_data[0],b_name,p_name);
-  
 }
 
 void setup(void) {
   // flip screen, if required
-  // u8g.setRot180();
+  u8g.setRot180();
   Serial.begin(9600);
 }
 
@@ -89,7 +126,7 @@ void structure(void) {
   u8g.drawStr(93,64,"O:  ");    // Outs
 
   /* Draw blank circles and boxes for:
-   balls, strikes, outs, and runners */
+     balls, strikes, outs, and runners */
   onbase_rst();
   balls_rst();
   strs_rst();
@@ -159,19 +196,8 @@ void outs_set(char o) {
 /* Draw the pitcher and batter names
  * Input should be pointers to arrays of the names
  */
-//void matchup_set(char state, char* names) {
 void matchup_set(char state, char* batter, char* pitcher) {
   u8g.setFont(u8g_font_5x8);
-
-  /*char batter[15] = {0};
-  char pitcher[15] = {0};
-  
-  for (int i = 0; i < 14; i++) {
-    batter[i] = names[i];
-    pitcher[i] = names[i+14];
-  }
-  batter[14] = '\0';
-  pitcher[14] = '\0';*/
 
   if ((state == 't') | (state == 'm')) {
       u8g.drawStr(6,32,batter);  //top    (away)
@@ -189,11 +215,10 @@ void matchup_set(char state, char* batter, char* pitcher) {
   u8g.setFont(u8g_font_fixed_v0);
 }
 
-/* Draw the team names
+/* Find and draw the team names
  * Input should be pointers to arrays of the names
  */
-void team_set(char* ateam, char* hteam) {
-  int a_index,h_index;
+void team_set(char *ateam, char *hteam) {
   char at[3],ht[3];
 
   at = {ateam[0],ateam[1]};
@@ -201,9 +226,15 @@ void team_set(char* ateam, char* hteam) {
   
   ht = {hteam[0],hteam[1]};
   h_index = atoi(ht);
+    
+  /* Have to copy the team name strings out of 
+   * program space before drawing it on the screen.
+   */
+  strcpy_P(a_team, (char*)pgm_read_word(&teams[a_index]));
+  strcpy_P(h_team, (char*)pgm_read_word(&teams[h_index]));
 
-  u8g.drawStr(0,23,teams[a_index]);
-  u8g.drawStr(0,42,teams[h_index]);
+  u8g.drawStr(0,23,a_team);
+  u8g.drawStr(0,42,h_team);
 }
 
 /* Clear the base squares */
@@ -289,6 +320,25 @@ void inn_set(char* inn_info) {
   }
 }
 
+void checkASCII(char inp) {
+  if ((inp >= ' ') && (inp <= '9')) {
+    valid = true;
+  }
+  else if ((inp >= 'A') && (inp <= 'z')) {
+    valid = true;
+  }
+  else if ((inp >= 'a') && (inp <= 'z')) {
+    valid = true;
+  }
+  else if (inp == ' ') {
+    valid = true;
+  }
+  else {
+    valid = false;
+  }
+  
+}
+
 void loop(void) {
   // Reset ser_data
   ser_data[57] = {0};
@@ -307,26 +357,29 @@ void loop(void) {
    *       and perhaps isn't necessary
   */
   if ((ser_data[0] == '#') && (ser_data[56] = '*')) {
-    for (int i = 1, j = 0; j < 28; i++, j++) {
-      game_data[j] = ser_data[i];
-    }
-    for (int i = 28, j = 0; j < 15; i++, j++) {
-      b_name[j] = ser_data[i];
-    }
-    for (int i = 42, j = 0; j < 15; i++, j++) {
-      p_name[j] = ser_data[i];
+    for (int i = 1; i < 56; i++) {
+      checkASCII(ser_data[i]);
+      if (!valid) {
+	break;
+      }
     }
     
-    /*for (int i = 0; i < 54; i++) {
-      game_data[i] = ser_data[i+1];
-    }*/
-    
-    // Terminate arrays with NULL
-    game_data[27] = '\0';
-    //game_data[54] = '\0';
-    b_name[14] = '\0';
-    p_name[14] = '\0';
-    
+    if (valid) {
+      for (int i = 1, j = 0; j < 28; i++, j++) {
+	game_data[j] = ser_data[i];
+      }
+      for (int i = 28, j = 0; j < 15; i++, j++) {
+	b_name[j] = ser_data[i];
+      }
+      for (int i = 42, j = 0; j < 15; i++, j++) {
+	p_name[j] = ser_data[i];
+      }
+       
+      // Terminate arrays with NULL
+      game_data[27] = '\0';
+      b_name[14] = '\0';
+      p_name[14] = '\0';
+    }
   }
   
   // picture loop
