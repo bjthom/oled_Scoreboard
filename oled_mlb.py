@@ -1,4 +1,5 @@
 import urllib2
+from httplib import BadStatusLine
 import time
 import datetime
 import xml.etree.ElementTree as ET
@@ -11,6 +12,7 @@ import sys
 port = sys.argv[1]
 gid = sys.argv[2]
 
+# Initialize exception counters
 html_excepts = 0
 parse_excepts = 0
 
@@ -148,20 +150,22 @@ while 1:
             
         # Set up serial data
         gameinfo = inn+inning+teams+rhe+count+str(onbase)
-        ser_data = gameinfo #+batter+pitcher
+        ser_data = gameinfo
+        inn_len = len(inn) + len(inning)
+        data_len = len(ser_data) + len(batter) + len(pitcher)
 
-        print 'Inn:       ' + inn + inning + ' (' + str(len(inn)+len(inning)) + ')'
-        print 'Teams:     ' + away_team + ' vs. ' + home_team +  teams  + ' (' + str(len(teams)) + ')'
-        print 'RHE:       ' + rhe + ' (' + str(len(rhe)) + ')'
-        print 'Count:     ' + count + ' (' + str(len(count)) + ')'
-        print 'Runners:   ' + str(onbase) + ' '+ str(bases)
-        print 'Batter:    ' + batter + ' (' + str(len(batter)) + ')'
-        print 'Pitcher:   ' + pitcher + ' (' + str(len(pitcher)) + ')'
-        print 'Last Play: ' + last_play + ' (' + str(len(last_play)) + ')'
-        print '#' + ser_data + batter + pitcher + '*'
-        print str(len(ser_data)+len(batter)+len(pitcher))
-        print '(' + str(html_excepts) + ',' + str(parse_excepts) + ')'
-        print '==='
+        # Print information
+        print "Inn      (%2d): \"%s%s\"" % (inn_len, inn, inning)
+        print "Teams    (%2d): \"%s vs. %s (%s)\"" % (len(teams), away_team, home_team, teams)
+        print "RHE      (%2d): \"%s\"" % (len(rhe), rhe)
+        print "Count    (%2d): \"%s\"" % (len(count), count)
+        print "Runners       : \"%d (%s)\"" % (onbase, ','.join([`i` for i in bases]))
+        print "Batter   (%2d): \"%s\"" % (len(batter), batter)
+        print "Pitcher  (%2d): \"%s\"" % (len(pitcher), pitcher)
+        print "Last Play(%2d): \"%s\"" % (len(last_play), last_play)
+        print "Sending  (%2d): \"#%s%s%s*\"" % (data_len, ser_data, batter, pitcher)
+        print "Exceptions    : %d, %d" % (html_excepts, parse_excepts)
+        print 20*'='
 
         # Write data to serial port
         ser.write('#')
@@ -175,9 +179,9 @@ while 1:
         # 12 sec. "max" between pitch time
         time.sleep(15)
     
-  #  except (urllib2.HTTPError, urllib2.URLError, httplib.BadStatusLine):
- #       num_excepts += 1
-#        pass
+    except (urllib2.HTTPError, urllib2.URLError, httplib.BadStatusLine):
+        num_excepts += 1
+        pass
 
     except ET.ParseError:
         parse_excepts +=1
