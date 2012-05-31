@@ -2,7 +2,7 @@ import urllib2
 from httplib import BadStatusLine
 import time
 import datetime
-import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import ElementTree, ParseError
 import serial
 import sys
 
@@ -35,7 +35,8 @@ url_event = url_setup + '/game_events.xml'
 # << Not yet implemented >>
 try:
     game_info = urllib2.urlopen(url_gamecenter)
-    info_tree = ET.parse(game_info)
+    info_tree = ElementTree()
+    info_tree.parse(game_info)
     info = info_tree.getroot()
     #game_time = info.attrib['game_time_et']
 
@@ -58,83 +59,113 @@ teams = team_dict[away_team] + team_dict[home_team]
 # Open serial connection to board
 ser = serial.Serial(port, 9600)
 
+###
+def getCount(src):
+    count = [game.attrib['b'],game.attrib['s'],game.attrib['o']]
+    count = ''.join(count)
+    return count
+
+###
+def getScore(src):
+    arhe = [score.attrib['ar'],score.attrib['ah'],score.attrib['he']]
+    hrhe = [score.attrib['hr'],score.attrib['hh'],score.attrib['ae']]
+
+    arhe = [' '+x if len(x) == 1 else x for x in arhe]
+    hrhe = [' '+x if len(x) == 1 else x for x in hrhe]
+    
+    rhe = ' '.join(arhe) + ' '.join(hrhe)
+    return rhe
+
+###
+def getOnBase(src):
+    runners = src.findall('man')
+
+    bases = [i.attrib['bnum'] for i in runners]
+    bases = [int(i) for i in bases if i != '4']
+        
+    if len(bases) > 0:
+        onbase = reduce(lambda x,y: x|y, bases)
+    else:
+        onbase = 0;
+
+    return [onbase, bases]
+
+###
+# Names should be no longer than 14 characters
+# Longest name: len(Saltalamacchia) == 14
+def getAtBat(src):
+    batter = src.find('batter').attrib['boxname']
+    pitcher = src.find('pitcher').attrib['boxname']
+
+    batter = batter.ljust(14)
+    pitcher = pitcher.ljust(14)
+    
+    return [batter, pitcher]
+
+###
+# pad inning number with space if < 10
+# inning state is the first letter of
+#  the inning status, unless game
+#  is over or not yet started
+def getInnInfo(src):
+    inning = src.attrib['inning']
+    inn_state = src.attrib['inning_state']
+    status = src.attrib['status_ind']
+
+    if len(inning) == 1:
+        inning = inning.ljust(2)
+        
+    if status == 'I':
+        inn = inn_state[0].lower()
+    elif (status == 'P') or (status == 'F') or (status == 'O'):
+        inn = status.lower()
+    elif status == 'PR':
+        inn = 'p' #change to rain?
+    elif status == 'PW':
+        inn = 'w'
+    else:
+        inn = '0'
+
+    return [inn, inning]
+
+###
 while 1:
     try:
         # Open URL and parse XML tree
         data = urllib2.urlopen(url_plays)
-        tree = ET.parse(data)
-            
-        game = tree.getroot()
+        
+        game_tree = ElementTree()
+        game_tree.parse(data)
+        game = game_tree.getroot()
+
         game_kids = game.getchildren()
 
-        # Get count data from
-        #  game.attrib
-        count = [game.attrib['b'],game.attrib['s'],game.attrib['o']]
-        count = ''.join(count)
+        # Get count data from: game.attrib
+        count = getCount(game)
 
-        # Get score and pad with spaces if necessary
-        #  game->score.attrib
-        score = game_kids[0].attrib
-
-        arhe = [score['ar'],score['ah'],score['he']]
-        hrhe = [score['hr'],score['hh'],score['ae']]
-
-        arhe = [' '+x if len(x) == 1 else x for x in arhe]
-        hrhe = [' '+x if len(x) == 1 else x for x in hrhe]
-
-        rhe = ' '.join(arhe) + ' '.join(hrhe)
+        # Get score data from: game->score.attrib
+        score = game_tree.find('score')
+        rhe = getScore(score)
         
-        # Get inning info
-        #  game.attrib
-        # pad inning number with space if < 10
-        # inning state is the first letter of
-        #  the inning status, unless game
-        #  is over or not yet started
-        inning = game.attrib['inning']
-        inn_state = game.attrib['inning_state']
-        status = game.attrib['status_ind']
+        # Get inning data from: game.attrib
+        inn_data = getInnInfo(game)
+        inn = inn_data[0]
+        inning = inn_data[1]
 
-        if len(inning) == 1:
-            inning = inning.ljust(2)
-
-        if status == 'I':
-            inn = inn_state[0].lower()
-        elif (status == 'P') or (status == 'F') or (status == 'O'):
-            inn = status.lower()
-        elif status == 'PR':
-            inn = 'p' #change to rain?
-        elif status == 'PW':
-            inn = 'w'
-        else:
-            inn = '0'
-
-        # Get baserunner info from:
-        #   game->field->offense->man['bnum']
+        # Get baserunner info from: game->field->offense->man['bnum']
         # Get the base number(s) occupied,
         #   convert to int, and then reduce and OR to get onbase code
-        offense = game_kids[4].getchildren()[0]
-        runners = offense.getchildren()
-
-        bases = [i.attrib['bnum'] for i in runners]
-        bases = [int(i) for i in bases if i != '4']
-        
-        if len(bases) > 0:
-            onbase = reduce(lambda x,y: x|y, bases)
-        else:
-            onbase = 0;
+        offense = game_tree.find("field/offense")
+        onbase_data = getOnBase(offense)
+        onbase = onbase_data[0]
+        bases = onbase_data[1]
             
-        # Get at bat info
-        # - Names should be no longer than 14 characters
-        #   Longest name: len(Saltalamacchia) == 14
+        # Get at bat info from: game->players
+        players = game_tree.find('players')
+        atbat_data = getAtBat(players)
+        batter = atbat_data[0]
+        pitcher = atbat_data[1]
         
-        players = game_kids[1].getchildren()
-
-        batter = players[0].attrib['boxname']
-        pitcher = players[1].attrib['boxname']
-
-        batter = batter.ljust(14)
-        pitcher = pitcher.ljust(14)
-
         # Get at bat event info
         at_bat = game_kids[3].getchildren()
 
@@ -179,11 +210,11 @@ while 1:
         # 12 sec. "max" between pitch time
         time.sleep(15)
     
-    except (urllib2.HTTPError, urllib2.URLError, httplib.BadStatusLine):
+    except (urllib2.HTTPError, urllib2.URLError, BadStatusLine):
         num_excepts += 1
         pass
 
-    except ET.ParseError:
+    except ParseError:
         parse_excepts +=1
         pass
 
