@@ -129,6 +129,21 @@ def getInnInfo(src):
     return [inn, inning]
 
 ###
+def getEvent(src):
+    if len(src) == 0:
+        event = 'None'
+    else:
+        event = src[-1].attrib['des']
+
+    if len(event) < 20:
+        event = event.ljust(20)
+    if len(event) > 20:
+        event = event[:20]
+
+    return event
+
+
+###
 while 1:
     try:
         # Open URL and parse XML tree
@@ -167,17 +182,8 @@ while 1:
         pitcher = atbat_data[1]
         
         # Get at bat event info
-        at_bat = game_kids[3].getchildren()
-
-        if len(at_bat) == 0:
-            last_play = 'None'
-        else:
-            last_play = at_bat[-1].attrib['des']
-
-        if len(last_play) < 20:
-            last_play = last_play.ljust(20)
-        if len(last_play) > 20:
-            last_play = last_play[:20]
+        at_bat = game_tree.find('atbat')
+        last_play = getEvent(at_bat)        
             
         # Set up serial data
         gameinfo = inn+inning+teams+rhe+count+str(onbase)
